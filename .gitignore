@@ -1,34 +1,632 @@
-# Gradle files
-.gradle/
-build/
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>⚔️ KINGSHOT STYLE - הגנת כדור הארץ</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Orbitron', 'Segoe UI', monospace;
+            touch-action: none;
+            background: #000;
+        }
+        
+        /* HUD קומפקטי */
+        .ui-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 30px;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 200;
+            pointer-events: none;
+            border: 1px solid rgba(255,100,0,0.5);
+            font-size: 0.8rem;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        .stat span:first-child { font-size: 1.1rem; }
+        .stat-value { color: #ffaa44; font-size: 1rem; margin-left: 4px; font-family: monospace; }
+        
+        /* פאנל שדרוגים */
+        .upgrade-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            padding: 8px 15px;
+            display: flex;
+            gap: 12px;
+            z-index: 200;
+            border: 1px solid #ffaa44;
+            flex-wrap: wrap;
+            justify-content: center;
+            pointer-events: auto;
+        }
+        
+        .upgrade-btn {
+            background: linear-gradient(135deg, #2a2a4a, #1a1a3a);
+            border: 1px solid #ffaa44;
+            border-radius: 30px;
+            padding: 6px 15px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.1s;
+            font-family: monospace;
+        }
+        .upgrade-btn:active { transform: scale(0.95); background: #3a3a5a; }
+        
+        /* הודעות קרב */
+        .wave-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(20px);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffaa44;
+            text-shadow: 0 0 10px orange;
+            z-index: 250;
+            white-space: nowrap;
+            border: 2px solid orange;
+            animation: pop 0.5s ease-out;
+            pointer-events: none;
+        }
+        
+        @keyframes pop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            80% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .damage-number {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff6666;
+            text-shadow: 0 0 5px red;
+            pointer-events: none;
+            z-index: 300;
+            animation: floatUp 0.8s ease-out forwards;
+            font-family: monospace;
+        }
+        
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.5);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.5rem;
+            color: #aaa;
+            z-index: 200;
+            pointer-events: none;
+        }
+        
+        @media (max-width: 700px) {
+            .ui-hud { font-size: 0.65rem; padding: 5px 10px; gap: 5px; }
+            .stat { padding: 2px 8px; }
+            .stat span:first-child { font-size: 0.9rem; }
+            .stat-value { font-size: 0.8rem; }
+            .upgrade-btn { font-size: 0.65rem; padding: 4px 10px; }
+            .wave-message { font-size: 1.2rem; padding: 8px 20px; white-space: nowrap; }
+        }
+        
+        .joystick-container {
+            position: absolute;
+            bottom: 60px;
+            left: 60px;
+            width: 110px;
+            height: 110px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 50%;
+            border: 2px solid rgba(255,100,0,0.8);
+            z-index: 300;
+            touch-action: none;
+        }
+        
+        .joystick-base {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(255,100,0,0.8), rgba(200,50,0,0.6));
+            border-radius: 50%;
+            border: 2px solid orange;
+            transition: 0.02s linear;
+            pointer-events: none;
+        }
+        
+        .attack-btn {
+            position: absolute;
+            bottom: 70px;
+            right: 60px;
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, #ff4444, #aa2222);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border: 2px solid #ff8888;
+            z-index: 300;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 0 20px rgba(255,0,0,0.5);
+        }
+        
+        .attack-btn:active { transform: scale(0.92); background: radial-gradient(circle, #ff6666, #cc4444); }
+        
+        @media (max-width: 700px) {
+            .joystick-container { width: 90px; height: 90px; bottom: 50px; left: 50px; }
+            .joystick-base { width: 42px; height: 42px; }
+            .attack-btn { width: 60px; height: 60px; bottom: 55px; right: 50px; font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ui-hud">
+        <div class="stat"><span>💰</span> <span id="coinsUI" class="stat-value">0</span></div>
+        <div class="stat"><span>❤️</span> <span id="healthUI" class="stat-value">100/100</span></div>
+        <div class="stat"><span>⚔️</span> <span id="damageUI" class="stat-value">10</span></div>
+        <div class="stat"><span>🌊</span> <span id="waveUI" class="stat-value">1</span></div>
+        <div class="stat"><span>💀</span> <span id="enemiesUI" class="stat-value">0</span></div>
+    </div>
+    
+    <div class="upgrade-panel" id="upgradePanel">
+        <div class="upgrade-btn" data-upgrade="damage">⚔️ נזק +5 (100💰)</div>
+        <div class="upgrade-btn" data-upgrade="health">❤️ חיים +25 (150💰)</div>
+        <div class="upgrade-btn" data-upgrade="speed">🏃 מהירות +15% (120💰)</div>
+        <div class="upgrade-btn" data-upgrade="attackSpeed">⚡ מהירות תקיפה (200💰)</div>
+    </div>
+    
+    <div id="waveMessage" class="wave-message" style="display: none;"></div>
+    <div class="controls-info">🎮 ג'ויסטיק שמאלי ← תנועה | 🔴 כפתור אדום ← תקיפה</div>
+    
+    <div id="joystickContainer" class="joystick-container">
+        <div id="joystickBase" class="joystick-base"></div>
+    </div>
+    <div id="attackBtn" class="attack-btn">⚔️</div>
 
-# Local configuration file (sdk path, etc)
-local.properties
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
 
-# Log/OS Files
-*.log
-
-# Android Studio generated files and folders
-captures/
-.externalNativeBuild/
-.cxx/
-*.aab
-*.apk
-output-metadata.json
-
-# IntelliJ
-*.iml
-.idea/
-misc.xml
-deploymentTargetDropDown.xml
-render.experimental.xml
-
-# Keystore files
-*.jks
-*.keystore
-
-# Google Services (e.g. APIs or Firebase)
-google-services.json
-
-# Android Profiling
-*.hprof
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+        
+        // ---------- GAME STATE ----------
+        const game = {
+            coins: 300,
+            health: 100,
+            maxHealth: 100,
+            damage: 10,
+            attackSpeed: 0.8,
+            speed: 5.5,
+            wave: 1,
+            enemiesInWave: 5,
+            enemiesRemaining: 5,
+            enemiesKilled: 0,
+            upgrades: { damage: 0, health: 0, speed: 0, attackSpeed: 0 }
+        };
+        
+        let enemies = [];
+        let projectiles = [];
+        let player;
+        let playerVelocityY = 0;
+        let isGrounded = true;
+        let joystickVector = { x: 0, y: 0 };
+        let joystickActive = false;
+        let lastAttack = 0;
+        let attackCooldown = false;
+        let worldBounds = 28;
+        
+        function showMessage(msg, isGood = true) {
+            const waveDiv = document.getElementById('waveMessage');
+            waveDiv.style.display = 'block';
+            waveDiv.innerHTML = msg;
+            waveDiv.style.color = isGood ? '#ffaa44' : '#ff6666';
+            setTimeout(() => { waveDiv.style.display = 'none'; }, 2000);
+        }
+        
+        function updateUI() {
+            document.getElementById('coinsUI').innerText = Math.floor(game.coins);
+            document.getElementById('healthUI').innerText = `${Math.floor(game.health)}/${game.maxHealth}`;
+            document.getElementById('damageUI').innerText = game.damage;
+            document.getElementById('waveUI').innerText = game.wave;
+            document.getElementById('enemiesUI').innerText = game.enemiesRemaining;
+        }
+        
+        function spawnEnemy() {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 18 + Math.random() * 8;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            
+            const group = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xaa44ff, emissive: 0x440066 }));
+            body.castShadow = true;
+            group.add(body);
+            const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000 }));
+            eye.position.set(0.3, 0.2, 0.4);
+            group.add(eye);
+            group.position.set(x, 0, z);
+            scene.add(group);
+            
+            const div = document.createElement('div');
+            div.textContent = `💀 ${Math.floor(30 + game.wave * 3)}❤️`;
+            div.style.cssText = 'color:#ff6666;font-size:10px;background:rgba(0,0,0,0.6);padding:2px 6px;border-radius:15px;white-space:nowrap;';
+            const label = new CSS2DObject(div);
+            label.position.set(x, 1.2, z);
+            scene.add(label);
+            
+            const hp = 30 + Math.floor(game.wave * 3);
+            enemies.push({
+                obj: group, label, hp: hp, maxHp: hp,
+                pos: new THREE.Vector3(x, 0, z),
+                speed: 1.8 + game.wave * 0.1,
+                damage: 10 + Math.floor(game.wave * 1.5)
+            });
+        }
+        
+        function startWave() {
+            game.enemiesInWave = 5 + Math.floor(game.wave * 1.5);
+            game.enemiesRemaining = game.enemiesInWave;
+            for (let i = 0; i < game.enemiesInWave; i++) {
+                setTimeout(() => spawnEnemy(), i * 300);
+            }
+            updateUI();
+            showMessage(`🌊 גל ${game.wave} | ${game.enemiesInWave} אויבים`, true);
+        }
+        
+        function attack() {
+            const now = Date.now();
+            if (now - lastAttack < game.attackSpeed * 1000) return;
+            lastAttack = now;
+            
+            // אנימציית תקיפה
+            player.children[0].scale.set(1.2, 0.8, 1.2);
+            setTimeout(() => { if(player.children[0]) player.children[0].scale.set(1,1,1); }, 100);
+            
+            let closest = null;
+            let closestDist = 3.5;
+            for (let i = 0; i < enemies.length; i++) {
+                const dist = player.position.distanceTo(enemies[i].pos);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closest = i;
+                }
+            }
+            
+            if (closest !== null) {
+                const enemy = enemies[closest];
+                enemy.hp -= game.damage;
+                
+                // נזק צף
+                const dmgDiv = document.createElement('div');
+                dmgDiv.className = 'damage-number';
+                dmgDiv.innerHTML = `-${game.damage}`;
+                dmgDiv.style.left = `${Math.random() * window.innerWidth}px`;
+                dmgDiv.style.top = `${Math.random() * window.innerHeight * 0.6 + 100}px`;
+                document.body.appendChild(dmgDiv);
+                setTimeout(() => dmgDiv.remove(), 800);
+                
+                if (enemy.hp <= 0) {
+                    const reward = 25 + Math.floor(game.wave * 5);
+                    game.coins += reward;
+                    game.enemiesRemaining--;
+                    game.enemiesKilled++;
+                    scene.remove(enemy.obj);
+                    if(enemy.label) scene.remove(enemy.label);
+                    enemies.splice(closest, 1);
+                    updateUI();
+                    showMessage(`+${reward}💰`, true);
+                    
+                    if (game.enemiesRemaining <= 0 && enemies.length === 0) {
+                        game.wave++;
+                        game.health = Math.min(game.maxHealth, game.health + 20);
+                        updateUI();
+                        setTimeout(() => startWave(), 1500);
+                    }
+                } else {
+                    if(enemy.label) {
+                        enemy.label.element.textContent = `💀 ${Math.floor(enemy.hp)}❤️`;
+                    }
+                }
+            }
+        }
+        
+        function buyUpgrade(type) {
+            let cost = 0;
+            switch(type) {
+                case 'damage': cost = 100; if(game.coins >= cost) { game.coins -= cost; game.damage += 5; game.upgrades.damage++; showMessage(`⚔️ נזק +5! (${game.damage})`, true); } break;
+                case 'health': cost = 150; if(game.coins >= cost) { game.coins -= cost; game.maxHealth += 25; game.health += 25; game.upgrades.health++; showMessage(`❤️ חיים +25!`, true); } break;
+                case 'speed': cost = 120; if(game.coins >= cost) { game.coins -= cost; game.speed += 0.8; game.upgrades.speed++; showMessage(`🏃 מהירות +15%!`, true); } break;
+                case 'attackSpeed': cost = 200; if(game.coins >= cost) { game.coins -= cost; game.attackSpeed = Math.max(0.3, game.attackSpeed - 0.15); game.upgrades.attackSpeed++; showMessage(`⚡ מהירות תקיפה!`, true); } break;
+            }
+            updateUI();
+        }
+        
+        // --- THREE.JS WORLD (כדור הארץ) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.008);
+        
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+        camera.position.set(12, 10, 18);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 1, 0);
+        controls.maxPolarAngle = Math.PI / 2.2;
+        
+        // קרקע - דשא
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x5a9e4e, roughness: 0.8 });
+        const ground = new THREE.Mesh(new THREE.CircleGeometry(35, 32), groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.3;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // רשת על הקרקע
+        const gridHelper = new THREE.GridHelper(70, 30, 0x88aa77, 0x446633);
+        gridHelper.position.y = -0.25;
+        scene.add(gridHelper);
+        
+        // עצים דקורטיביים
+        const treeMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+        const leafMat = new THREE.MeshStandardMaterial({ color: 0x3a8c3a });
+        for (let i = 0; i < 60; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = 22 + Math.random() * 12;
+            const x = Math.cos(angle) * r;
+            const z = Math.sin(angle) * r;
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.8, 6), treeMat);
+            trunk.position.set(x, 0.1, z);
+            trunk.castShadow = true;
+            const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.8, 8), leafMat);
+            leaves.position.set(x, 0.6, z);
+            leaves.castShadow = true;
+            scene.add(trunk);
+            scene.add(leaves);
+        }
+        
+        // אבנים קטנות
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
+        for (let i = 0; i < 80; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const r = 5 + Math.random() * 25;
+            const x = Math.cos(angle) * r;
+            const z = Math.sin(angle) * r;
+            const stone = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2), stoneMat);
+            stone.position.set(x, -0.2, z);
+            stone.castShadow = true;
+            scene.add(stone);
+        }
+        
+        // שמיים עם עננים
+        const cloudMat = new THREE.MeshStandardMaterial({ color: 0xeeeeff });
+        for (let i = 0; i < 25; i++) {
+            const cloud = new THREE.Mesh(new THREE.SphereGeometry(0.5 + Math.random()*0.3, 7), cloudMat);
+            cloud.position.set((Math.random() - 0.5) * 50, 8 + Math.random() * 5, (Math.random() - 0.5) * 40);
+            scene.add(cloud);
+        }
+        
+        // שחקן - לוחם
+        const playerGroup = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 1.1, 8), new THREE.MeshStandardMaterial({ color: 0x44aa44, metalness: 0.3 }));
+        body.castShadow = true;
+        playerGroup.add(body);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffccaa }));
+        head.position.y = 0.7;
+        playerGroup.add(head);
+        const sword = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 1.2), new THREE.MeshStandardMaterial({ color: 0xccccaa, metalness: 0.8 }));
+        sword.position.set(0.6, 0.2, 0.5);
+        playerGroup.add(sword);
+        playerGroup.position.set(0, 0, 0);
+        scene.add(playerGroup);
+        player = playerGroup;
+        
+        // --- ג'ויסטיק ---
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickBase = document.getElementById('joystickBase');
+        let joystickCenter = { x: 0, y: 0 };
+        let activeTouch = null;
+        
+        function getCenter() {
+            const rect = joystickContainer.getBoundingClientRect();
+            return { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+        }
+        
+        function updateJoystickPos(clientX, clientY) {
+            const dx = clientX - joystickCenter.x;
+            const dy = clientY - joystickCenter.y;
+            const dist = Math.min(45, Math.hypot(dx, dy));
+            const angle = Math.atan2(dy, dx);
+            const limitedX = Math.cos(angle) * dist;
+            const limitedY = Math.sin(angle) * dist;
+            joystickBase.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+            let normX = dx / 45;
+            let normY = dy / 45;
+            if (Math.hypot(dx, dy) > 45) { normX = Math.cos(angle); normY = Math.sin(angle); }
+            joystickVector.x = Math.min(1, Math.max(-1, normX));
+            joystickVector.y = Math.min(1, Math.max(-1, normY));
+        }
+        
+        function resetJoy() { joystickVector = { x: 0, y: 0 }; joystickBase.style.transform = 'translate(-50%, -50%)'; joystickActive = false; activeTouch = null; }
+        
+        joystickContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            activeTouch = touch.identifier;
+            const rect = joystickContainer.getBoundingClientRect();
+            if (touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                joystickActive = true;
+                joystickCenter = getCenter();
+                updateJoystickPos(touch.clientX, touch.clientY);
+            }
+        });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (!joystickActive) return;
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === activeTouch) {
+                    updateJoystickPos(e.touches[i].clientX, e.touches[i].clientY);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        });
+        
+        window.addEventListener('touchend', (e) => {
+            if (activeTouch !== null) {
+                let found = false;
+                for (let i = 0; i < e.touches.length; i++) if (e.touches[i].identifier === activeTouch) found = true;
+                if (!found) resetJoy();
+            }
+        });
+        
+        // כפתור תקיפה
+        document.getElementById('attackBtn').addEventListener('click', () => { attack(); });
+        document.querySelectorAll('.upgrade-btn').forEach(btn => {
+            btn.addEventListener('click', () => { buyUpgrade(btn.getAttribute('data-upgrade')); });
+        });
+        
+        // לולאת תנועה ועדכון אויבים
+        let lastTime = performance.now();
+        let attackAnimTime = 0;
+        
+        function updateMovement(delta) {
+            let speed = game.speed * delta;
+            if (joystickActive && (Math.abs(joystickVector.x) > 0.05 || Math.abs(joystickVector.y) > 0.05)) {
+                let move = new THREE.Vector3(joystickVector.x, 0, joystickVector.y).normalize();
+                player.position.x += move.x * speed;
+                player.position.z += move.z * speed;
+                player.rotation.y = Math.atan2(move.x, move.z);
+            }
+            player.position.x = Math.min(worldBounds, Math.max(-worldBounds, player.position.x));
+            player.position.z = Math.min(worldBounds, Math.max(-worldBounds, player.position.z));
+            controls.target.lerp(player.position, 0.1);
+        }
+        
+        function updateEnemies(delta) {
+            for (let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                const dir = new THREE.Vector3().subVectors(player.position, e.pos).normalize();
+                e.pos.x += dir.x * e.speed * delta;
+                e.pos.z += dir.z * e.speed * delta;
+                e.obj.position.copy(e.pos);
+                if(e.label) e.label.position.set(e.pos.x, 1.2, e.pos.z);
+                
+                if (player.position.distanceTo(e.pos) < 1.2) {
+                    game.health -= e.damage;
+                    updateUI();
+                    scene.remove(e.obj);
+                    if(e.label) scene.remove(e.label);
+                    enemies.splice(i, 1);
+                    i--;
+                    
+                    if (game.health <= 0) {
+                        showMessage(`💀 הפסדת! מתחיל מחדש...`, false);
+                        game.health = game.maxHealth;
+                        game.coins = Math.floor(game.coins * 0.7);
+                        game.wave = 1;
+                        game.enemiesRemaining = 0;
+                        enemies.forEach(e => { scene.remove(e.obj); if(e.label) scene.remove(e.label); });
+                        enemies = [];
+                        setTimeout(() => startWave(), 1500);
+                        updateUI();
+                    }
+                    break;
+                }
+            }
+        }
+        
+        let prevTime = performance.now();
+        function animate() {
+            const now = performance.now();
+            let delta = Math.min(0.033, (now - prevTime) / 1000);
+            prevTime = now;
+            
+            updateMovement(delta);
+            updateEnemies(delta);
+            
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // התחלת המשחק
+        startWave();
+        updateUI();
+        showMessage("⚔️ הרגו את כל האויבים! שדרגו את הנשק שלכם!", true);
+    </script>
+</body>
+</html>
